@@ -37,8 +37,11 @@ def run_pipeline(custom_args, beam_args):
         lineas: PCollection[str] = p | beam.io.ReadFromText(entrada)
         palabras  = lineas | beam.FlatMap(lambda l:l.split())
         contadas: PCollection[Tuple[str,int]] = palabras | beam.combiners.Count.PerElement()
-        palabras_top: PCollection[Tuple[str,int]] = contadas | beam.combiners.Top.Of(5, key=lambda kv:kv[1])
-        palabras_top | beam.Map(print)
+        palabras_top_lista: PCollection[Tuple[str,int]] = contadas | beam.combiners.Top.Of(5, key=lambda kv:kv[1])
+        palabras_top = palabras_top_lista | beam.FlatMap(lambda x: x)
+        formateado: PCollection[str] = palabras_top | beam.Map(lambda kv: '%s,%d' % (kv[0],kv[1]))
+        #formateado | beam.Map(print) #Si queremos imprimir
+        formateado | beam.io.WriteToText(salida)
 
 
 
