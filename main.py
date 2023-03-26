@@ -21,6 +21,7 @@ def main():
     parser = argparse.ArgumentParser(description="Nuestro primer pipeline")
     parser.add_argument("--entrada", help="Fichero de entrada")
     parser.add_argument("--salida", help="Fichero de salida")
+    parser.add_argument("--n_palabras", type=int, help="Número de palabras en la salida")
 
     our_args, beam_args = parser.parse_known_args()
 
@@ -29,7 +30,8 @@ def main():
 def run_pipeline(custom_args, beam_args):
     entrada = custom_args.entrada
     salida = custom_args.salida
-
+    n_palabras = custom_args.n_palabras
+    print(n_palabras)
     opts = PipelineOptions(beam_args)
 
     with beam.Pipeline(options = opts) as p:
@@ -37,13 +39,11 @@ def run_pipeline(custom_args, beam_args):
         lineas: PCollection[str] = p | beam.io.ReadFromText(entrada)
         palabras  = lineas | beam.FlatMap(lambda l:l.split())
         contadas: PCollection[Tuple[str,int]] = palabras | beam.combiners.Count.PerElement()
-        palabras_top_lista: PCollection[Tuple[str,int]] = contadas | beam.combiners.Top.Of(5, key=lambda kv:kv[1])
+        palabras_top_lista: PCollection[Tuple[str,int]] = contadas | beam.combiners.Top.Of(n_palabras, key=lambda kv:kv[1])
         palabras_top = palabras_top_lista | beam.FlatMap(lambda x: x)
         formateado: PCollection[str] = palabras_top | beam.Map(lambda kv: '%s,%d' % (kv[0],kv[1]))
         #formateado | beam.Map(print) #Si queremos imprimir
         formateado | beam.io.WriteToText(salida)
-
-
 
 if __name__ == "__main__":
     main()
