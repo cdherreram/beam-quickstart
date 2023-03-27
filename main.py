@@ -50,15 +50,15 @@ def run_pipeline(custom_args, beam_args):
 
     with beam.Pipeline(options = opts) as p:
         # Extraer cada línea 
-        lineas: PCollection[str] = p | beam.io.ReadFromText(entrada)
-        palabras  = lineas | beam.FlatMap(lambda l:l.split())
-        limpiadas = palabras | beam.Map(sanitizar_palabra)
-        contadas: PCollection[Tuple[str,int]] = limpiadas | beam.combiners.Count.PerElement()
-        palabras_top_lista: PCollection[Tuple[str,int]] = contadas | beam.combiners.Top.Of(n_palabras, key=lambda kv:kv[1])
-        palabras_top = palabras_top_lista | beam.FlatMap(lambda x: x)
-        formateado: PCollection[str] = palabras_top | beam.Map(lambda kv: '%s,%d' % (kv[0],kv[1]))
+        lineas: PCollection[str] = p | "Leer entrada" >> beam.io.ReadFromText(entrada)
+        palabras  = lineas | "Pasamos a palabras" >> beam.FlatMap(lambda l:l.split())
+        limpiadas = palabras | "Limpiar palabras" >> beam.Map(sanitizar_palabra)
+        contadas: PCollection[Tuple[str,int]] = limpiadas | "Contamos" >> beam.combiners.Count.PerElement()
+        palabras_top_lista: PCollection[Tuple[str,int]] = contadas | "Ranking" >> beam.combiners.Top.Of(n_palabras, key=lambda kv:kv[1])
+        palabras_top = palabras_top_lista | "Desenvuelve lista" >> beam.FlatMap(lambda x: x)
+        formateado: PCollection[str] = palabras_top | "Formatear" >> beam.Map(lambda kv: '%s,%d' % (kv[0],kv[1]))
         #formateado | beam.Map(print) #Si queremos imprimir
-        formateado | beam.io.WriteToText(salida)
+        formateado | "Escribir salida" >> beam.io.WriteToText(salida,)
 
 if __name__ == "__main__":
     main()
